@@ -13,8 +13,11 @@
 // dist/digest.txt (`conker-server --digest-file web/dist/digest.txt`) and passes it to the client
 // for start() only, so a reload after a server restart uses the new one. Over https the
 // certificate is checked as any site's, and WebSocket uses wss://.
+// Before it starts, pack.js makes sure assets/ answers: the site's own pack, or the one the player
+// made from their ROM (made again from the stored ROM after a new build), else a link to make it.
 import init, { chat_done, start, voice_frame } from "./dist/client.js";
 import { chat } from "./chat.js";
+import { ensure } from "./pack.js";
 import { voice } from "./voice.js";
 
 // Push-to-talk (voice.js) and the text chat (chat.js): the client calls them from start() on.
@@ -121,14 +124,29 @@ if (hash) {
   options.searchParams.set("digest", hash);
   history.replaceState(null, "", options);
 }
-try {
-  await init({ module_or_path: wasm() });
-  await start();
-  console.info(`game downloaded, asset pack fetched and client started in ${Math.round(performance.now() - t0)} ms`);
-  // Under the overlay: the keys (the diagnostics' too) reach the game while it loads.
-  document.getElementById("game").focus();
-} catch (e) {
-  show(`Bugger. Could not start: ${e?.message ?? e}. Reload to try again.`, true);
-} finally {
+// The pack's making (from a stored ROM) fills the bar up to where the game's download takes over.
+const packed = await ensure((what, part) => conkerLoading("Unpacking the game…", what, 0.9 * DOWNLOAD * part)).catch(
+  (e) => {
+    show(`Bugger. Could not unpack the game: ${e?.message ?? e}. Reload to try again.`, true);
+    history.replaceState(null, "", address);
+    return null;
+  },
+);
+if (packed === false) {
+  const home = Object.assign(document.createElement("a"), { href: "./#/", textContent: "the home page" });
+  status.replaceChildren("The game's files come from your own ROM: load it once on ", home, ", then come back.");
+  status.className = "error";
   history.replaceState(null, "", address);
 }
+if (packed)
+  try {
+    await init({ module_or_path: wasm() });
+    await start();
+    console.info(`game downloaded, asset pack fetched and client started in ${Math.round(performance.now() - t0)} ms`);
+    // Under the overlay: the keys (the diagnostics' too) reach the game while it loads.
+    document.getElementById("game").focus();
+  } catch (e) {
+    show(`Bugger. Could not start: ${e?.message ?? e}. Reload to try again.`, true);
+  } finally {
+    history.replaceState(null, "", address);
+  }

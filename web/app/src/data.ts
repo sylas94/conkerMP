@@ -422,9 +422,18 @@ export function settingRows({ map, mode, settings: s }: NewServer): [string, str
   return rows;
 }
 
+/** Where the web server's /api/ is: this site's own (`bun run serve`, deploy/'s Caddy), or, on a
+ * static host (GitHub Pages: deploy/pages.sh), the one `VITE_API` names when the landing is built
+ * (`https://game.example.org/`; server.ts must allow this site with `--cors`). */
+const VITE_API: string = import.meta.env.VITE_API ?? "";
+export const API = VITE_API && !VITE_API.endsWith("/") ? `${VITE_API}/` : VITE_API;
+
+/** `api/…` on [API]: relative to this page without one. */
+export const api = (path: string) => `${API}api/${path}`;
+
 /** The servers, or null on a site without the dev web server (a plain static server). */
 export async function listServers(): Promise<GameServer[] | null> {
-  const res = await fetch("api/servers", { cache: "no-store" }).catch(() => null);
+  const res = await fetch(api("servers"), { cache: "no-store" }).catch(() => null);
   if (!res?.ok || !res.headers.get("content-type")?.includes("json")) return null;
   return (await res.json()) as GameServer[];
 }
@@ -442,7 +451,7 @@ async function send(path: string, init: RequestInit): Promise<Response> {
 
 /** Starts a game server; resolves once it is listening. */
 export async function createServer(server: NewServer): Promise<GameServer> {
-  const res = await send("api/servers", {
+  const res = await send(api("servers"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(server),
@@ -452,5 +461,5 @@ export async function createServer(server: NewServer): Promise<GameServer> {
 
 /** Kills a game server (or clears an exited one). */
 export async function killServer(id: string): Promise<void> {
-  await send(`api/servers/${encodeURIComponent(id)}`, { method: "DELETE" });
+  await send(api(`servers/${encodeURIComponent(id)}`), { method: "DELETE" });
 }

@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import {
   allowed,
+  api,
   MAPS,
   MODES,
   PICKS,
@@ -36,7 +37,8 @@ export function Lobby() {
     server: server.address,
     transport,
     side,
-    "token-url": `/api/servers/${server.id}/token`,
+    // Absolute: on GitHub Pages the API is another host's (data.ts API).
+    "token-url": new URL(api(`servers/${server.id}/token`), location.href).href,
   };
   if (server.digest) options.digest = server.digest;
   // None: the game server's "Player N".

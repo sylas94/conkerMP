@@ -1,0 +1,14 @@
+[package]
+name = "conker-pack-web"
+version.workspace = true
+edition.workspace = true
+
+# `conker-extract pack` in the browser: the player's own ROM in, the asset pack out (web/pack.js),
+# so a static site (GitHub Pages) serves the game without serving the pack.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+conker-extract = { path = "../conker-extract" }
+extract-core.workspace = true
+wasm-bindgen.workspace = true

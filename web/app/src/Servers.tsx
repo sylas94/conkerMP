@@ -3,7 +3,7 @@ import { LogIn, RefreshCw, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { CreateServer } from "./CreateServer";
-import { type GameServer, killServer, MAPS, MODES, players, settingRows } from "./data";
+import { API, type GameServer, killServer, MAPS, MODES, players, settingRows } from "./data";
 import { SkullIcon, StatusBadge, useRefresh } from "./ui";
 
 const route = getRouteApi("/servers");
@@ -57,7 +57,12 @@ export function Servers({ admin = false }: { admin?: boolean }) {
 
       <div className="hazard mt-6" />
 
-      {servers === null ? (
+      {servers === null && API ? (
+        <p className="bubble mt-10 max-w-2xl">
+          The game servers aren't answering, mate ({new URL(API).host}). Give it a minute and hit
+          Refresh.
+        </p>
+      ) : servers === null ? (
         <p className="bubble mt-10 max-w-2xl">
           No server list here, mate. It and "Create server" come from the dev web server (
           <code className="font-mono text-sm">cd web/app && bun run serve</code>), which this site

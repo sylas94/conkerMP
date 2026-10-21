@@ -7,7 +7,7 @@
 <p align="center">
     The N64's most foul-mouthed multiplayer, rebuilt in Rust and playable in your browser.
     <br />
-    <a href="https://conker.wtf"><strong>Play now »</strong></a>
+    <a href="https://sylas94.github.io/conkerMP/"><strong>Play now »</strong></a>
     <br />
     <br />
     <a href="#introduction"><strong>Introduction</strong></a> ·
@@ -21,7 +21,7 @@
 <br/>
 
 <p align="center">
-  <a href="https://conker.wtf">
+  <a href="https://sylas94.github.io/conkerMP/">
     <img alt="Two Tediz in a Deathmatch" src="https://conker.wtf/assets/screenshots/modes/total-war.jpg">
   </a>
 </p>
@@ -126,6 +126,19 @@ bun run test                    # every crate; ROM tests read roms/game.z64, ora
 to the Bun web server ([`web/app/server.ts`](./web/app/server.ts)), which starts a `conker-server` per match on its
 own ports. [`deploy/build.sh`](./deploy/build.sh) builds the site, [`deploy/pack.sh`](./deploy/pack.sh) uploads the
 pack, and [`deploy/README.md`](./deploy/README.md) walks through the whole setup.
+
+### GitHub Pages
+
+[sylas94.github.io/conkerMP](https://sylas94.github.io/conkerMP/) is the same site on GitHub Pages, which serves no
+asset pack: each player picks their own ROM once on the home page, and the extractor
+([`crates/conker-pack-web`](./crates/conker-pack-web), `conker-extract pack` compiled to WebAssembly) unpacks it in
+their browser, about half a minute. [`web/pack.js`](./web/pack.js) stores the files in the browser's Cache Storage and
+the service worker ([`web/sw.js`](./web/sw.js)) answers the page's and the game's `assets/` requests from there; the
+ROM never leaves the machine. The landing calls the game servers' web server on a VPS (`VITE_API`, allowed with
+`server.ts --cors`). [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) builds the site with
+[`deploy/pages.sh`](./deploy/pages.sh) on every push to `main`; [`deploy/pages-vps.sh`](./deploy/pages-vps.sh) sets
+up the VPS, whose pack [`deploy/pack-wasm.mjs`](./deploy/pack-wasm.mjs) makes with the same WebAssembly extractor so
+it matches the browsers' byte for byte (`deploy/README.md`, "GitHub Pages").
 
 ## What's in this repo
 

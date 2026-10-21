@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { RomPack } from "./RomPack";
 import { Banner, BRICKS, Keys, PLAN } from "./ui";
 
 interface Control {
@@ -218,6 +219,8 @@ export function Home() {
           <BattlePlan />
         </div>
       </section>
+
+      <RomPack />
 
       <section aria-labelledby="tonight" className="mx-auto max-w-6xl px-4 py-12">
         <div className="chalkboard">

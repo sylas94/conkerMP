@@ -256,3 +256,39 @@ clients connect, the old one's are refused, the player stays); and this Caddyfil
 site and `pack.sh`'s pack with the test certificate, with and without the password. What only a
 real host can show: Chrome trusting the certificate (WebTransport without a digest, `wss://` from an https
 page), Let's Encrypt issuing and renewing, the systemd units, and IPv4 into `[::]` on Linux.
+
+## GitHub Pages
+
+The same site without serving Rare's data: GitHub Pages hosts the pages, each player makes the pack from their own ROM
+in the browser (`web/pack.js`: the extractor in `crates/conker-pack-web`, the files in Cache Storage, `web/sw.js`
+answering `assets/`), and a VPS runs only the web server and its game servers.
+
+**The site** (`.github/workflows/pages.yml`, on every push to `main`): `API=https://DOMAIN/ sh deploy/pages.sh`
+builds `target-net/pages` (the client in `v/<hash>/`, the extractor in `x/<hash>/`; its path names the players'
+cached pack, so a new extractor makes it again from the ROM they stored). In the repository's Settings → Pages, set
+the source to **GitHub Actions** once. The workflow's `API` is the VPS's address.
+
+**The pack.** The game servers must read the pack the browsers make, and the native `conker-extract pack` differs
+from it in the animations' last bits (the platform's `sin`/`cos`; WebAssembly's are Rust's own, the same in every
+browser), so the host's pack comes from the WebAssembly extractor too:
+
+```sh
+sh web/build-pack.sh                                      # web/dist/extract.js + extract_bg.wasm
+node deploy/pack-wasm.mjs roms/game.z64 target-net/pack-wasm
+```
+
+**The VPS** (`deploy/pages-vps.sh`, as root, from a folder with `conker-server` (Linux), `server.ts`
+(`web/app/server.ts`), `data.ts` (`web/app/src/data.ts`) and `assets/` (the pack above)): it adds an nginx site
+for DOMAIN (an nginx already there keeps its others), gets its Let's Encrypt certificate (webroot, renewed by
+certbot's timer, the hook copying it to `/etc/conker/tls`), installs Bun, and runs `conker-web` on loopback with
+`--cors` for the Pages origin, at most MATCHES matches (ports FIRST_PORT on, TCP and UDP open), in 450 MB and half
+the CPU weight of the host's other services. nginx proxies `/api/` with a rate limit and sends everything else to
+the Pages site. A name for the IP is enough for the certificate (`195-88-24-152.sslip.io`).
+
+```sh
+DOMAIN=195-88-24-152.sslip.io PUBLIC=195.88.24.152 ORIGIN=https://sylas94.github.io \
+  PAGES=https://sylas94.github.io/conkerMP/ EMAIL=you@example.org sh pages-vps.sh
+```
+
+Run it again to update the server, the web server or the pack (it ends the matches in progress). Deploy the server
+with the site: the same protocol (`PROTOCOL_ID`) and the same extractor, or players are refused.

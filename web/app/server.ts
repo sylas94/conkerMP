@@ -7,6 +7,7 @@
 //   bun run serve [--port 8080] [--host localhost] [--game-ports 5900-5949]
 //                 [--server ../../target-net/release/conker-server] [--assets ../../assets]
 //                 [--cert PEM --cert-key PEM --token-key FILE --public IP...]   (production)
+//                 [--cors https://you.github.io...]   (a landing on another site: deploy/pages.sh)
 import { closeSync, mkdtempSync, openSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -40,6 +41,9 @@ const { values: args } = parseArgs({
     "cert-key": { type: "string" },
     "token-key": { type: "string" },
     public: { type: "string", multiple: true },
+    // The sites whose pages may call /api/ (CORS): the landing on GitHub Pages, its origin only
+    // (`https://you.github.io`). None: same-origin pages only, as before.
+    cors: { type: "string", multiple: true },
   },
 });
 const PROD = args.cert !== undefined;
@@ -246,7 +250,8 @@ const api = {
       return Response.json(await Promise.all(list));
     },
     async POST(req: Request) {
-      // JSON only: a cross-site page can't send it without a CORS preflight, which this server never allows.
+      // JSON only: a cross-site page can't send it without a CORS preflight, which this server
+      // allows only for --cors' origins.
       if (!req.headers.get("content-type")?.startsWith("application/json"))
         return fail(415, "send JSON (content-type: application/json)");
       const body = validate(await req.json().catch(() => null));
@@ -296,6 +301,54 @@ const api = {
   },
 };
 
+/** --cors' origins, exactly as a browser sends them (no trailing slash). */
+const ORIGINS = new Set((args.cors ?? []).map((o) => new URL(o).origin));
+type Handler = (req: Request) => Response | Promise<Response>;
+
+/** The headers that let `req`'s page (one of ORIGINS) read `res`; none for any other page. */
+function allow(req: Request, res: Response): Response {
+  const origin = req.headers.get("origin");
+  if (!origin || !ORIGINS.has(origin)) return res;
+  // A proxied game server's response has immutable headers: a copy.
+  const out = new Response(res.body, res);
+  out.headers.set("access-control-allow-origin", origin);
+  out.headers.append("vary", "Origin");
+  return out;
+}
+
+/** Every route with allow() on its answers and a preflight answer (OPTIONS) for ORIGINS. */
+function withCors<R>(routes: R): R {
+  // Each handler takes its own route's BunRequest: one Request type here.
+  const table = routes as unknown as Record<string, Record<string, Handler>>;
+  return Object.fromEntries(
+    Object.entries(table).map(([path, methods]) => [
+      path,
+      {
+        ...Object.fromEntries(
+          Object.entries(methods).map(([method, handle]) => [
+            method,
+            async (req: Request) => allow(req, await handle(req)),
+          ]),
+        ),
+        OPTIONS(req: Request) {
+          const origin = req.headers.get("origin");
+          if (!origin || !ORIGINS.has(origin)) return new Response(null, { status: 403 });
+          return new Response(null, {
+            status: 204,
+            headers: {
+              "access-control-allow-origin": origin,
+              "access-control-allow-methods": Object.keys(methods).join(", "),
+              "access-control-allow-headers": "content-type",
+              "access-control-max-age": "600",
+              vary: "Origin",
+            },
+          });
+        },
+      },
+    ]),
+  ) as unknown as R;
+}
+
 /** web/ as http.server serves it: files (the assets/ symlink followed), a folder's index.html. */
 async function staticFile(req: Request): Promise<Response> {
   const notFound = new Response("Not found\n", { status: 404 });
@@ -315,7 +368,7 @@ const listening: ReturnType<typeof Bun.serve>[] = [];
 for (const hostname of hosts) {
   try {
     listening.push(
-      Bun.serve({ hostname, port: Number(args.port), routes: api, fetch: staticFile }),
+      Bun.serve({ hostname, port: Number(args.port), routes: withCors(api), fetch: staticFile }),
     );
   } catch (e) {
     // Loopback over IPv6 may be off: IPv4's is enough.
@@ -329,6 +382,7 @@ if (!loopback)
       "game servers on this machine. This dev tool has no authentication: never expose it to the internet.\n",
   );
 console.log(`game servers: ${BINARY}, ports ${LO}-${HI}, assets ${ASSETS}`);
+if (ORIGINS.size) console.log(`/api/ open to pages from ${[...ORIGINS].join(", ")}`);
 
 // Every 15 s, a running game server without a human (bots don't count) for IDLE_MINUTES stops, as a
 // DELETE would; an /info that doesn't answer counts no human.

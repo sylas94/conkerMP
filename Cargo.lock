@@ -2550,6 +2550,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "conker-pack-web"
+version = "0.1.0"
+dependencies = [
+ "conker-extract",
+ "extract-core",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "conker-rules"
 version = "0.1.0"
 dependencies = [

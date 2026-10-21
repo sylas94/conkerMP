@@ -1,0 +1,65 @@
+# The GitHub Pages site (deploy/pages.sh): the landing, the game page, the browser client and the
+# in-browser extractor. No asset pack: each player makes theirs from their own ROM. The game servers
+# run on the VPS that API names (deploy/README.md, "GitHub Pages").
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  API: https://195-88-24-152.sslip.io/
+  CARGO_TARGET_DIR: target-net
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # rust-toolchain.toml: 1.98.1 with wasm32-unknown-unknown.
+      - run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target-net"
+          cache-targets: true
+
+      - name: wasm-bindgen 0.2.129 and binaryen
+        run: |
+          mkdir -p "$HOME/tools"
+          curl -sSL https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.129/wasm-bindgen-0.2.129-x86_64-unknown-linux-musl.tar.gz | tar -xz -C "$HOME/tools"
+          curl -sSL https://github.com/WebAssembly/binaryen/releases/download/version_133/binaryen-version_133-x86_64-linux.tar.gz | tar -xz -C "$HOME/tools"
+          echo "$HOME/tools/wasm-bindgen-0.2.129-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+          echo "$HOME/tools/binaryen-version_133/bin" >> "$GITHUB_PATH"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: sh deploy/pages.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: target-net/pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
