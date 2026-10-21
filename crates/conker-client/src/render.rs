@@ -304,6 +304,8 @@ pub fn build(app: &mut App, slice: Slice, cfg: &Config) {
             FreeCameraPlugin,
         ));
     }
+    #[cfg(target_family = "wasm")]
+    no_shadows(app);
     // Keep simulating and talking to the server while unfocused. In the browser, also while the page
     // is hidden ([`hidden_page`]).
     #[cfg(not(target_family = "wasm"))]
@@ -1128,6 +1130,20 @@ fn toggle_text_hud(controls: crate::bindings::Controls, mut on: ResMut<TextHud>)
     if controls.just_pressed(crate::bindings::Action::TextHud) {
         on.0 = !on.0;
     }
+}
+
+/// The browser: `bevy_pbr::shadows` without shadows (`shadows.wgsl`; no light here casts any). WebGL2
+/// compiles each PBR pipeline's whole shader on the page's thread, and ANGLE on Direct3D 11 (Chrome
+/// and Edge on Windows) took 6-17 s for each with Bevy's shadow sampling, a minute and a half on a
+/// first visit; about 1.5 s without. Bevy's own is in the embedded asset source by now (`PbrPlugin`)
+/// but not yet read (its load runs later, in a task): ours replaces it there.
+#[cfg(target_family = "wasm")]
+fn no_shadows(app: &App) {
+    let embedded = app
+        .world()
+        .resource::<bevy::asset::io::embedded::EmbeddedAssetRegistry>();
+    let path = std::path::Path::new("bevy_pbr/render/shadows.wgsl");
+    embedded.insert_asset(path.into(), path, include_bytes!("shadows.wgsl").as_slice());
 }
 
 /// The browser's frames while the page is unfocused or hidden: on a timer, which a hidden page clamps
