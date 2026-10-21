@@ -215,8 +215,9 @@ makes a new self-signed certificate (valid 14 days) on every start, so reload th
 the reload reads the new hash (before wave 5's browser test, the page wrote the hash into its address, so a reload kept
 the old one and failed over WebTransport until the `digest=` was removed by hand). A `?digest=` typed in the address
 is used as it is. The file is stale once the server exits, so delete it then. For a second player, open a second window, not a second tab of the same window. A
-background tab runs a frame a second at most (Chrome: one a minute after 5 min hidden), and the server stands its
-player meanwhile; past the 5 min netcode timeout it drops it, and the page offers RECONNECT (I).
+background tab, or a window covered or minimised (Alt+Tab), gets no animation frames: `play.js` runs the game's on a
+worker's timer meanwhile, 30 a second (its tick rate), so the match goes on with the player standing (the keys let go
+with the focus) and nothing to resync on return.
 
 The loading overlay (`#intro`) stays up until the player is in the match. Its chocolate bar fills with each step: the
 game's download (`play.js` counts `dist/client_bg.wasm`'s bytes; MB only when it comes compressed), `/info`, the pack's

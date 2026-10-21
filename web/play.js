@@ -24,6 +24,42 @@ import { voice } from "./voice.js";
 voice(voice_frame);
 chat(chat_done);
 
+// A hidden page (another tab, Alt+Tab over a covered or minimised window) gets no animation frames,
+// and Bevy's winit loop runs a frame only on one: the client stopped dead, sent the server nothing,
+// and came back seconds of ticks behind (lightyear's resync rewinding and replaying the match,
+// players jumping). While hidden, a worker's timer (a page's own are clamped to one a second, then
+// one a minute; a worker's aren't) hands out the callbacks the browser holds back, 30 a second, the
+// game's tick rate: the match goes on, the player standing (the keys let go with the focus, the Esc
+// menu open). Callbacks asked for while shown run on whichever comes first.
+{
+  const raf = window.requestAnimationFrame.bind(window);
+  const caf = window.cancelAnimationFrame.bind(window);
+  const waiting = new Map(); // our id -> [callback, the browser's id]
+  let last = 0;
+  const run = (id, time) => {
+    const entry = waiting.get(id);
+    if (!entry) return;
+    waiting.delete(id);
+    entry[0](time);
+  };
+  window.requestAnimationFrame = (callback) => {
+    const id = ++last;
+    waiting.set(id, [callback, raf((time) => run(id, time))]);
+    return id;
+  };
+  window.cancelAnimationFrame = (id) => {
+    const entry = waiting.get(id);
+    waiting.delete(id);
+    if (entry) caf(entry[1]);
+  };
+  const timer = new Blob(["setInterval(() => postMessage(0), 1000 / 30);"], { type: "text/javascript" });
+  new Worker(URL.createObjectURL(timer)).onmessage = () => {
+    if (!document.hidden) return;
+    const now = performance.now();
+    for (const id of [...waiting.keys()]) run(id, now);
+  };
+}
+
 const intro = document.getElementById("intro");
 const status = document.getElementById("status");
 const detail = document.getElementById("detail");

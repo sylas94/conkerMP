@@ -1157,7 +1157,9 @@ fn hidden_mode() -> bevy::winit::UpdateMode {
 /// `requestAnimationFrame`, so no frame, no packet, and the server's netcode timeout ends the
 /// match. Bevy's winit loop runs a frame without a redraw only when every window is invisible, and
 /// on a timer only in its reactive mode: the page's visibility goes into the window's (winit's web
-/// backend ignores it there) and into the mode, even focused, until it shows again.
+/// backend ignores it there) and into the mode, even focused, until it shows again. The page's own
+/// timers are clamped meanwhile, so the frames that keep the match going at its tick rate are
+/// play.js's: a worker's timer runs the animation frame callbacks the browser holds back.
 #[cfg(target_family = "wasm")]
 fn hidden_page(
     mut occluded: MessageReader<bevy::window::WindowOccluded>,
