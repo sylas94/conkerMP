@@ -1,5 +1,5 @@
 // pack.js's worker: runs the extractor (dist/extract.js, crates/conker-pack-web) on the ROM it is
-// sent, off the page's thread (about half a minute), and stores each file in Cache Storage under its
+// sent, off the page's thread (a few seconds), and stores each file in Cache Storage under its
 // assets/ URL, then `done` last. Messages back: {step, fraction}, then {done} or {error}.
 const TYPES = {
   json: "application/json",
@@ -18,7 +18,7 @@ self.onmessage = async ({ data: { extractor, cache, assets, done, rom } }) => {
     say("Loading the extractor", 0.02);
     const { default: init, pack } = await import(extractor);
     await init();
-    say("Unpacking your ROM (about half a minute)", 0.05);
+    say("Unpacking your ROM", 0.05);
     // Synchronous: no word from it until it's done.
     const files = pack(new Uint8Array(rom));
     rom = null;

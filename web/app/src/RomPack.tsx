@@ -112,7 +112,7 @@ export function RomPack() {
           <p className="mt-2 max-w-2xl text-bone/90">
             {state.is === "ready"
               ? "The game's maps, models and sounds are unpacked and stored in this browser. Join a game."
-              : "The maps, models and sounds come from your own copy of Conker's Bad Fur Day (N64, USA). Pick the ROM file (.z64, .v64 or .n64) once: it's unpacked right here in your browser, about half a minute, and never uploaded."}
+              : "The maps, models and sounds come from your own copy of Conker's Bad Fur Day (N64, USA). Pick the ROM file (.z64, .v64 or .n64) once: it's unpacked right here in your browser in a few seconds, and never uploaded."}
           </p>
           {working && (
             <div className="mt-4">

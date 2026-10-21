@@ -12,3 +12,7 @@ crate-type = ["cdylib", "rlib"]
 conker-extract = { path = "../conker-extract" }
 extract-core.workspace = true
 wasm-bindgen.workspace = true
+
+# The heap, grown in big steps (src/heap.rs).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = "0.2.14"

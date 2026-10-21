@@ -132,7 +132,7 @@ pack, and [`deploy/README.md`](./deploy/README.md) walks through the whole setup
 [sylas94.github.io/conkerMP](https://sylas94.github.io/conkerMP/) is the same site on GitHub Pages, which serves no
 asset pack: each player picks their own ROM once on the home page, and the extractor
 ([`crates/conker-pack-web`](./crates/conker-pack-web), `conker-extract pack` compiled to WebAssembly) unpacks it in
-their browser, about half a minute. [`web/pack.js`](./web/pack.js) stores the files in the browser's Cache Storage and
+their browser, in a few seconds. [`web/pack.js`](./web/pack.js) stores the files in the browser's Cache Storage and
 the service worker ([`web/sw.js`](./web/sw.js)) answers the page's and the game's `assets/` requests from there; the
 ROM never leaves the machine. The landing calls the game servers' web server on a VPS (`VITE_API`, allowed with
 `server.ts --cors`). [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) builds the site with

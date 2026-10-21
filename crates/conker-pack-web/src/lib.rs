@@ -6,6 +6,9 @@
 
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+mod heap;
+
 /// `bun run pack`'s maps, in its order.
 pub const MAPS: [usize; 8] = [0x2D, 0x30, 0x34, 0x3F, 0x2B, 0x1A, 0x24, 0x33];
 
