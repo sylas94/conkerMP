@@ -82,8 +82,10 @@
       font: inherit; }
     #chat-lines li.team, #chat-box.team { color: #9cd3ff; }
     #chat-lines li.server { color: #ffe08a; }
-    #teams { position: fixed; top: 30%; left: 30%; margin: 0; padding: 10px; background: rgba(0, 0, 0, 0.6);
-      color: #fff; font: 20px/1.4 ui-monospace, monospace; white-space: pre; pointer-events: none; }
+    /* The scoreboard (Tab; teams.rs): centred, its monospace columns kept on a narrow window. */
+    #teams { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px);
+      overflow: hidden; margin: 0; padding: 10px; background: rgba(0, 0, 0, 0.6);
+      color: #fff; font: clamp(11px, 2.2vw, 20px)/1.4 ui-monospace, monospace; white-space: pre; pointer-events: none; }
     #teams:empty { display: none; }
     /* The diagnostics panel (the key under Esc; diag.rs): over the loading overlay too. */
     #diag { position: fixed; top: 8px; right: 8px; z-index: 1; margin: 0; padding: 6px; background: rgba(0, 0, 0, 0.6);

@@ -1277,7 +1277,7 @@ fn buffer_input(
         }
         Some(_) => circle_input(cfg.id, tick),
         None if free_camera.iter().any(|c| c.enabled) => (0, 0, 0), // the keys fly the camera
-        None if team_screen.open => (0, 0, 0),                      // the pad picks a team
+        None if team_screen.picking() => (0, 0, 0),                 // the pad picks a team
         None if paused.0 => (0, 0, 0), // the Esc menu holds it: stand, keeping the yaw
         None if chat::open() => (0, 0, 0), // the chat box has the keys
         None if modern => {
