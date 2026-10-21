@@ -287,7 +287,7 @@ the Pages site. A name for the IP is enough for the certificate (`195-88-24-152.
 
 ```sh
 DOMAIN=195-88-24-152.sslip.io PUBLIC=195.88.24.152 ORIGIN=https://sylas94.github.io \
-  PAGES=https://sylas94.github.io/conkerMP/ EMAIL=you@example.org sh pages-vps.sh
+  PAGES=https://sylas94.github.io/conkerMP/ sh pages-vps.sh     # EMAIL=... for Let's Encrypt's notices
 ```
 
 Run it again to update the server, the web server or the pack (it ends the matches in progress). Deploy the server

@@ -8,11 +8,13 @@
 # for DOMAIN, installs Bun and runs the web server as conker-web: /api/ for the Pages site's pages
 # only (CORS), at most MATCHES matches, each in the unit's memory and CPU share so the host's other
 # services keep theirs.
-#   DOMAIN=game.example.org PUBLIC=203.0.113.7 ORIGIN=https://you.github.io EMAIL=you@example.org \
+#   DOMAIN=game.example.org PUBLIC=203.0.113.7 ORIGIN=https://you.github.io [EMAIL=you@example.org] \
 #   [PAGES=https://you.github.io/repo/] [MATCHES=3] [API_PORT=8090] [FIRST_PORT=5900] sh pages-vps.sh
 # Run again to update: the binary, the web server and the pack are replaced, the certificate kept.
 set -e
-: "${DOMAIN:?}" "${PUBLIC:?}" "${ORIGIN:?}" "${EMAIL:?}"
+: "${DOMAIN:?}" "${PUBLIC:?}" "${ORIGIN:?}"
+# Let's Encrypt's expiry notices go to EMAIL; without one the account has none.
+if [ -n "$EMAIL" ]; then contact="-m $EMAIL"; else contact=--register-unsafely-without-email; fi
 PAGES=${PAGES:-$ORIGIN/}
 MATCHES=${MATCHES:-3}
 API_PORT=${API_PORT:-8090}
@@ -81,7 +83,7 @@ if [ ! -s "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
   http_part > "$site"
   ln -sf "$site" /etc/nginx/sites-enabled/conker
   nginx -t && systemctl reload nginx
-  certbot certonly --webroot -w /var/www/letsencrypt -d "$DOMAIN" -m "$EMAIL" --agree-tos -n \
+  certbot certonly --webroot -w /var/www/letsencrypt -d "$DOMAIN" $contact --agree-tos -n \
     --deploy-hook /etc/conker/renew-hook.sh
 fi
 RENEWED_LINEAGE=/etc/letsencrypt/live/$DOMAIN /etc/conker/renew-hook.sh 2> /dev/null || true
